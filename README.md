@@ -1,6 +1,6 @@
-# Image 2 Tangnano20k
+# Image to Tangnano20k
 
-## Computer procedure
+## Image -> FPGA 
 
 - Computer: START_IMAGE [Size] [Checksum] 
 - FPGA: READY 

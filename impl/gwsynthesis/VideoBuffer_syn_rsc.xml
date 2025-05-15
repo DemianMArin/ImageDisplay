@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<Module name="receive" Register="74" Alu="7" Lut="144">
- <SubModule name="uart_master" Register="200" Alu="8" Lut="245" Bsram="2"/>
-</Module>

@@ -7,7 +7,14 @@ module receive (
     output reg led17,  
     output reg led18,
     output reg led19,
-    output reg led20   
+    output reg led20,
+
+
+    output reg [7:0] data_out,     // Byte data output
+    output reg data_valid,         // Data valid signal
+    output reg image_start,        // Start of image signal
+    output reg image_end,          // End of image signal
+    output reg chunk_complete      // Chunk complete signal
 );
 
     // Protocol control constants
@@ -124,6 +131,10 @@ module receive (
     always @(posedge clk) begin
         // Default assignments
         rx_en <= 1'b1; // Always enable RX
+        data_valid <= 1'b0; // Default to no valid data
+        image_start <= 1'b0; // Default to no image start
+        image_end <= 1'b0; // Default to no image end
+        chunk_complete <= 1'b0; // Default to no chunk complete
         
         // State machine logic
         case (state)
@@ -173,6 +184,7 @@ module receive (
                     end else if (header_complete == 1'b1) begin
                         // We've received at least one byte after comma, consider header complete
                         state <= SEND_READY;
+                        image_start <= 1'b1; // Signal start of image
                     end
                     
                     // Safety check - if header is too long, reset
@@ -208,13 +220,19 @@ module receive (
                     // Check for END_IMAGE
                     if (rdata == END_IMAGE) begin
                         state <= SEND_COMPLETE;
+                        image_end <= 1'b1; // Signal end of image
                     end else begin
                         // Process regular data byte
                         byte_counter <= byte_counter + 1'b1;
                         
+                        // Output data to storing module
+                        data_out <= rdata;
+                        data_valid <= 1'b1;
+
                         // Check if chunk is complete (256 bytes)
                         if (byte_counter >= (CHUNK_SIZE - 1)) begin
                             state <= SEND_ACK;
+                            chunk_complete <= 1'b1; // Signal chunk complete
                         end
                     end
                 end

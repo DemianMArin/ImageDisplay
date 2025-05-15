@@ -11,9 +11,11 @@
 -type RAM_SDP
 -file_type vlg
 -bram_b true
--depth_0 65535
--depth_1 65535
+-depth_0 32767
+-depth_1 32767
 -width_0 2
 -width_1 2
 -read_mode bypass
 -reset_mode sync
+-init_file /home/demian/verilog-vga/2-image/extras/file.mi
+-init_match port_A
