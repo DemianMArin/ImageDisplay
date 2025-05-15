@@ -1,0 +1,38 @@
+[
+ {
+  "InstFile" : "/home/demian/GowinProjects/VideoBuffer/src/gowin_sdpb/gowin_sdpb.v",
+  "InstLine" : 10,
+  "InstName" : "Gowin_SDPB",
+  "ModuleFile" : "/home/demian/GowinProjects/VideoBuffer/src/gowin_sdpb/gowin_sdpb.v",
+  "ModuleLine" : 10,
+  "ModuleName" : "Gowin_SDPB"
+ },
+ {
+  "InstFile" : "/home/demian/GowinProjects/VideoBuffer/src/receive.v",
+  "InstLine" : 1,
+  "InstName" : "receive",
+  "ModuleFile" : "/home/demian/GowinProjects/VideoBuffer/src/receive.v",
+  "ModuleLine" : 1,
+  "ModuleName" : "receive",
+  "SubInsts" : [
+   {
+    "InstFile" : "/home/demian/GowinProjects/VideoBuffer/src/receive.v",
+    "InstLine" : 86,
+    "InstName" : "uart_master",
+    "ModuleFile" : "/home/demian/GowinProjects/VideoBuffer/src/uart_master/uart_master.v",
+    "ModuleLine" : 1445,
+    "ModuleName" : "UART_MASTER_Top",
+    "SubInsts" : [
+     {
+      "InstFile" : "/home/demian/GowinProjects/VideoBuffer/src/uart_master/uart_master.v",
+      "InstLine" : 1490,
+      "InstName" : "i4",
+      "ModuleFile" : "/home/demian/GowinProjects/VideoBuffer/src/uart_master/uart_master.v",
+      "ModuleLine" : 1,
+      "ModuleName" : "~uart_master.UART_MASTER_Top"
+     }
+    ]
+   }
+  ]
+ }
+]

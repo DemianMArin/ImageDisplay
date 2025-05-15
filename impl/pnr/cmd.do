@@ -1,0 +1,13 @@
+-d /home/demian/GowinProjects/VideoBuffer/impl/gwsynthesis/VideoBuffer.vg
+-p GW2AR-18C-QFN88-8
+-pn GW2AR-LV18QN88C8/I7
+-cst /home/demian/GowinProjects/VideoBuffer/src/VideoBuffer.cst
+-cfg /home/demian/GowinProjects/VideoBuffer/impl/pnr/device.cfg
+-sdc /home/demian/GowinProjects/VideoBuffer/src/VideoBuffer.sdc
+-bit
+-tr
+-ph
+-timing
+-cst_error
+-correct_hold 1
+-route_maxfan 23
