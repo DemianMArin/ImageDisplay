@@ -25,9 +25,9 @@ module storing (
     reg ceb;                   // Clock enable for port B (read)
     reg resetb;                // Reset for port B
     reg oce;                   // Output clock enable
-    reg [15:0] ada;            // Address for port A (write)
+    reg [14:0] ada;            // Address for port A (write)
     reg [1:0] din;             // Data input to memory (write)
-    reg [15:0] adb;            // Address for port B (read)
+    reg [14:0] adb;            // Address for port B (read)
     
     // Internal clock connections
     wire clka = clk;           // Clock for port A (write)
@@ -48,7 +48,8 @@ module storing (
     reg [3:0] state;
     reg [1:0] base64_counter;      // Count received base64 chars (0-3)
     reg [23:0] decoded_data;       // Decoded 3 bytes (24 bits)
-    reg [15:0] write_addr;         // Memory write address
+    reg [7:0] x_counter;     // Column (0-239)
+    reg [6:0] y_counter;     // Line (0-127)
     reg [15:0] pixel_counter;      // Count pixels written
     reg [7:0] base64_buffer [0:3]; // Buffer for 4 base64 chars
     reg [3:0] pixel_bit_counter;   // Count bits within decoded data
@@ -64,7 +65,8 @@ module storing (
         state = IDLE;
         base64_counter = 2'd0;
         decoded_data = 24'd0;
-        write_addr = 16'd0;
+        x_counter <= 8'd0;
+        y_counter <= 7'd0;
         pixel_counter = 16'd0;
         pixel_bit_counter = 4'd0;
         cea = 1'b0;
@@ -72,9 +74,9 @@ module storing (
         ceb = 1'b0;
         resetb = 1'b1; // Active high reset
         oce = 1'b0;
-        ada = 16'd0;
+        ada = 15'd0;
         din = 2'd0;
-        adb = 16'd0;
+        adb = 15'd0;
         val_A = 6'd0;
         val_B = 6'd0;
         val_C = 6'd0;
@@ -107,12 +109,17 @@ module storing (
     end
     
     // Main write state machine - uses clk domain
+
+    // The memory address is formed as {y[6:0], x[7:0]}
+    wire [14:0] mem_addr = {y_counter[6:0], x_counter[7:0]};
+
     always @(posedge clk) begin
         if (reset) begin
             state <= IDLE;
             base64_counter <= 2'd0;
             decoded_data <= 24'd0;
-            write_addr <= 16'd0;
+            x_counter <= 8'd0;
+            y_counter <= 7'd0;
             pixel_counter <= 16'd0;
             pixel_bit_counter <= 4'd0;
             cea <= 1'b0;
@@ -133,7 +140,8 @@ module storing (
                     if (image_start) begin
                         state <= DECODING;
                         base64_counter <= 2'd0;
-                        write_addr <= 16'd0;
+                        x_counter <= 8'd0;
+                        y_counter <= 7'd0;
                         pixel_counter <= 16'd0;
                         writing_active <= 1'b1;   // Signal that writing is active
                         image_received <= 1'b0;
@@ -183,10 +191,11 @@ module storing (
                     state <= STORE_PIXELS;
                 end
                 
+
                 STORE_PIXELS: begin
                     // Write 2-bit chunks to memory
                     cea <= 1'b1;
-                    ada <= write_addr;
+                    ada <= mem_addr;
                     
                     // Extract 2 bits from decoded data based on counter
                     case (pixel_bit_counter)
@@ -204,12 +213,25 @@ module storing (
                         4'd11: din <= decoded_data[1:0];
                         default: din <= 2'd0;
                     endcase
+
+                    // Update position counters
+                    x_counter <= x_counter + 1'b1;
                     
-                    // Increment counters
-                    write_addr <= write_addr + 1'b1;
-                    pixel_counter <= pixel_counter + 1'b1;
+                    // If we reach the end of a row, move to next row
+                    if (x_counter == 8'd239) begin
+                        x_counter <= 8'd0;
+                        y_counter <= y_counter + 1'b1;
+                        
+                        // Reset y if we reach the end of the image
+                        if (y_counter == 7'd127) begin
+                            y_counter <= 7'd0;
+                        end
+                    end
+                    
+                    // Increment pixel bit counter
                     pixel_bit_counter <= pixel_bit_counter + 1'b1;
-                    
+                    pixel_counter <= pixel_counter + 1'b1;
+
                     // If we've written all 12 pixels (24 bits / 2 bits per pixel)
                     if (pixel_bit_counter == 4'd11) begin
                         state <= DECODING;
@@ -273,8 +295,8 @@ module storing (
         .ceb(ceb),         // input ceb
         .resetb(resetb),   // input resetb
         .oce(oce),         // input oce
-        .ada(ada),         // input [15:0] ada
+        .ada(ada),         // input [14:0] ada
         .din(din),         // input [1:0] din
-        .adb(adb)          // input [15:0] adb
+        .adb(adb)          // input [14:0] adb
     );
 endmodule

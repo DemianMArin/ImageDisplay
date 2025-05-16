@@ -15,7 +15,8 @@ END_IMAGE = 0x03    # ETX - End of Text
 IMAGE_RECEIVED = 0x16  # SYN - Synchronous Idle
 
 # Chunk size in bytes (adjust based on your system's buffer size)
-CHUNK_SIZE = 256
+CHUNK_SIZE = 10240
+BYTES_IN_BASE64 = 10240
 
 def send_image(port_name, image_path, timeout=1000):
     # Open the serial port
@@ -40,8 +41,8 @@ def send_image(port_name, image_path, timeout=1000):
             base64_data = f.read().strip()
         
         # Verify that we have the expected image size
-        if len(base64_data) != 10240:
-            print(f"Warning: Expected 10240 bytes, but got {len(base64_data)} bytes")
+        if len(base64_data) != BYTES_IN_BASE64:
+            print(f"Warning: Expected {BYTES_IN_BASE64} bytes, but got {len(base64_data)} bytes")
             
     except Exception as e:
         print(f"Error reading image file: {e}")
@@ -86,7 +87,7 @@ def send_image(port_name, image_path, timeout=1000):
             # Send data in chunks
             chunk = base64_data[chunk_index:chunk_index+CHUNK_SIZE].encode()
             ser.write(chunk)
-            print(f"Sent chunk {chunk_index//CHUNK_SIZE + 1}/40 ({len(chunk)} bytes)")
+            print(f"Sent chunk {chunk_index//CHUNK_SIZE + 1}/{int(BYTES_IN_BASE64/CHUNK_SIZE)} ({len(chunk)} bytes)")
             state = "WAIT_ACK"
             attempts = 0
         

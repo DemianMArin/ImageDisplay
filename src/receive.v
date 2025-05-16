@@ -23,7 +23,7 @@ module receive (
     localparam ACK = 8'h06;             // Same as READY
     localparam END_IMAGE = 8'h03;       // ETX - End of Text
     localparam IMAGE_RECEIVED = 8'h16;  // SYN - Synchronous Idle
-    localparam CHUNK_SIZE = 256;        // Chunk size in bytes
+    localparam CHUNK_SIZE = 10240;        // Chunk size in bytes
 
     // State machine states
     localparam IDLE = 4'd0;
@@ -268,7 +268,7 @@ module receive (
                 blink_timer <= blink_timer + 1'b1;
                 
                 // Toggle LEDs every 75ms
-                if (blink_timer >= 27'd2025000) begin
+                if (blink_timer >= 27'd1350000) begin
                     blink_timer <= 27'd0;
                     led_state <= ~led_state;
                     
@@ -277,7 +277,7 @@ module receive (
                         blink_counter <= blink_counter + 1'b1;
                         
                         // After 17 complete blinks, return to IDLE
-                        if (blink_counter >= 8'd17) begin
+                        if (blink_counter >= 8'd2) begin
                             state <= IDLE;
                             led15 <= 1'b1;
                             led16 <= 1'b1;

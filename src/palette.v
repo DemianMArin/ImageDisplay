@@ -13,22 +13,22 @@ localparam i = 1'b1; // intensify
   
   always @(*) begin
       case(i_color)
-          2'b00: begin 
+          2'b11: begin 
               red   = 5'd31;
               green = 6'd63;
               blue  = 5'd31;
           end
-          2'b01: begin 
+          2'b10: begin 
               red   = 5'd23;   
               green = 6'd48;   
               blue  = 5'd23;   
           end
-          2'b10: begin 
+          2'b01: begin 
               red   = 5'd15;   
               green = 6'd34;   
               blue  = 5'd19;   
           end
-          2'b11: begin 
+          2'b00: begin 
               red   = 5'd00;  
               green = 6'd00;  
               blue  = 5'd00;  

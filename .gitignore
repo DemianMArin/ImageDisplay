@@ -3,13 +3,9 @@ impl/*
 *.user
 **/*_tmp.v
 *.bak
+*.png
+*.bin
+*.txt
 
-# CreateImage
-bitmap_2bpp.bin
-dummy.b64.txt    
-pinout_2bpp.bin.b64.txt  
-bitmap_2bpp.bin.b64.txt  
-pinout_2bpp.bin  
-pinout.png               
 
 
