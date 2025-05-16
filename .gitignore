@@ -4,8 +4,11 @@ impl/*
 **/*_tmp.v
 *.bak
 *.png
+*.jpeg
 *.bin
 *.txt
+
+/src/uart_master/temp/
 
 
 

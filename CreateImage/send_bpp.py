@@ -23,7 +23,8 @@ def send_image(port_name, image_path, timeout=1000):
     try:
         ser = serial.Serial(
             port=port_name,
-            baudrate=500000,
+            # baudrate=500000,
+            baudrate=115200,
             bytesize=serial.EIGHTBITS,
             parity=serial.PARITY_NONE,
             stopbits=serial.STOPBITS_ONE,
