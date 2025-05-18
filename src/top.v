@@ -17,7 +17,7 @@ module top (
 );
     // Internal signals for receive module
     wire [7:0] data_out;
-    wire data_valid, image_start, image_end, chunk_complete;
+    wire data_valid, image_start, image_end;
     
     // SDPB memory output
     wire [1:0] dout;
@@ -91,8 +91,7 @@ module top (
         .data_out(data_out),
         .data_valid(data_valid),
         .image_start(image_start),
-        .image_end(image_end),
-        .chunk_complete(chunk_complete)
+        .image_end(image_end)
     );
     
     // Instantiate storing module with LCD interface
@@ -103,7 +102,6 @@ module top (
         .data_valid(data_valid),
         .image_start(image_start),
         .image_end(image_end),
-        .chunk_complete(chunk_complete),
         
         // LCD interface
         .lcd_clk(lcd_clk),

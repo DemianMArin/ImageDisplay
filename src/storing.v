@@ -5,7 +5,6 @@ module storing (
     input data_valid,          // Data valid signal
     input image_start,         // Start of image signal
     input image_end,           // End of image signal
-    input chunk_complete,      // Chunk complete signal
     
     // LCD interface inputs
     input lcd_clk,             // LCD clock
@@ -41,8 +40,7 @@ module storing (
     localparam DECODING = 4'd1;
     localparam COMBINE_VALUES = 4'd2;
     localparam STORE_PIXELS = 4'd3;
-    localparam WAIT_NEXT_CHUNK = 4'd4;
-    localparam COMPLETE = 4'd5;
+    localparam COMPLETE = 4'd4;
     
     // State machine registers
     reg [3:0] state;
@@ -108,8 +106,6 @@ module storing (
             char_value = 6'd0;
     end
     
-    // Main write state machine - uses clk domain
-
     // The memory address is formed as {y[6:0], x[7:0]}
     wire [14:0] mem_addr = {y_counter[6:0], x_counter[7:0]};
 
@@ -174,10 +170,6 @@ module storing (
                     if (image_end) begin
                         state <= COMPLETE;
                     end
-                    
-                    if (chunk_complete) begin
-                        state <= WAIT_NEXT_CHUNK;
-                    end
                 end
                 
                 COMBINE_VALUES: begin
@@ -235,17 +227,6 @@ module storing (
                     // If we've written all 12 pixels (24 bits / 2 bits per pixel)
                     if (pixel_bit_counter == 4'd11) begin
                         state <= DECODING;
-                    end
-                end
-                
-                WAIT_NEXT_CHUNK: begin
-                    // Wait for next chunk of data
-                    if (data_valid) begin
-                        state <= DECODING;
-                    end
-                    
-                    if (image_end) begin
-                        state <= COMPLETE;
                     end
                 end
                 

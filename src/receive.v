@@ -13,29 +13,24 @@ module receive (
     output reg [7:0] data_out,     // Byte data output
     output reg data_valid,         // Data valid signal
     output reg image_start,        // Start of image signal
-    output reg image_end,          // End of image signal
-    output reg chunk_complete      // Chunk complete signal
+    output reg image_end          // End of image signal
 );
 
     // Protocol control constants
     localparam START_IMAGE = 8'h01;     // SOH - Start of Heading
     localparam READY = 8'h06;           // ACK - Acknowledge
-    localparam ACK = 8'h06;             // Same as READY
     localparam END_IMAGE = 8'h03;       // ETX - End of Text
     localparam IMAGE_RECEIVED = 8'h16;  // SYN - Synchronous Idle
-    localparam CHUNK_SIZE = 10240;        // Chunk size in bytes
-
-    // State machine states
+    
+    // State machine states - simplified
     localparam IDLE = 4'd0;
     localparam RECEIVE_HEADER = 4'd1;
     localparam SEND_READY = 4'd2;
     localparam WAIT_TX_READY = 4'd3;
-    localparam RECEIVE_CHUNK = 4'd4;
-    localparam SEND_ACK = 4'd5;
-    localparam RECEIVE_END = 4'd6;
-    localparam SEND_COMPLETE = 4'd7;
-    localparam IMAGE_DONE = 4'd8;
-    localparam STARTUP = 4'd9;
+    localparam RECEIVE_DATA = 4'd4;     // Single state for all data
+    localparam SEND_COMPLETE = 4'd5;
+    localparam IMAGE_DONE = 4'd6;
+    localparam STARTUP = 4'd7;
 
     // UART control signals
     reg reset_n;
@@ -53,7 +48,6 @@ module receive (
     reg [3:0] next_state;
     reg [15:0] byte_counter;
     reg header_complete;
-    reg [7:0] last_rx_byte;
 
     // Reset counter
     reg [7:0] reset_counter;
@@ -75,7 +69,6 @@ module receive (
         next_state = IDLE;
         byte_counter = 16'd0;
         header_complete = 1'b0;
-        last_rx_byte = 8'h00;
         led15 = 1'b1;
         led16 = 1'b1;
         led17 = 1'b1;
@@ -113,8 +106,6 @@ module receive (
         .RTSn()                   // Request To Send (not used)
     );
 
-    // Reset counter logic - synthesizable startup sequence
-    // This always block only controls reset_n and startup_complete
     always @(posedge clk) begin
         if (reset_counter < 8'd100) begin
             reset_counter <= reset_counter + 1'b1;
@@ -126,15 +117,12 @@ module receive (
         end
     end
 
-    // Main state machine - synchronous reset
-    // This always block controls state and all other registers
     always @(posedge clk) begin
         // Default assignments
-        rx_en <= 1'b1; // Always enable RX
-        data_valid <= 1'b0; // Default to no valid data
-        image_start <= 1'b0; // Default to no image start
-        image_end <= 1'b0; // Default to no image end
-        chunk_complete <= 1'b0; // Default to no chunk complete
+        rx_en <= 1'b1;
+        data_valid <= 1'b0;
+        image_start <= 1'b0;
+        image_end <= 1'b0;
         
         // State machine logic
         case (state)
@@ -157,8 +145,7 @@ module receive (
                 led17 <= 1'b1;
                 
                 if (~rx_rdy_n) begin // RX data available
-                    raddr <= 3'd0; // Read from RHR (Receive Holding Register)
-                    last_rx_byte <= rdata;
+                    raddr <= 3'd0; 
                     
                     if (rdata == START_IMAGE) begin
                         state <= RECEIVE_HEADER;
@@ -169,17 +156,11 @@ module receive (
             end
             
             RECEIVE_HEADER: begin
-                // Parse header: expecting size and checksum separated by comma
                 if (~rx_rdy_n) begin
-                    raddr <= 3'd0; // Read from RHR
-                    last_rx_byte <= rdata;
-                    
-                    // Simple header parsing: just count bytes and look for end pattern
+                    raddr <= 3'd0; 
                     byte_counter <= byte_counter + 1'b1;
                     
-                    // For simplicity, assume header is complete when we've received
-                    // at least one char after a comma
-                    if (header_complete == 1'b0 && last_rx_byte == 8'h2C) begin // Comma character
+                    if (rdata == 8'h2C) begin // Comma character
                         header_complete <= 1'b1;
                     end else if (header_complete == 1'b1) begin
                         // We've received at least one byte after comma, consider header complete
@@ -200,7 +181,7 @@ module receive (
                     waddr <= 3'd0; // Write to THR (Transmit Holding Register)
                     wdata <= READY;
                     state <= WAIT_TX_READY;
-                    next_state <= RECEIVE_CHUNK;
+                    next_state <= RECEIVE_DATA;
                     byte_counter <= 16'd0; // Reset byte counter for chunk
                 end
             end
@@ -212,53 +193,32 @@ module receive (
                 end
             end
             
-            RECEIVE_CHUNK: begin
+            RECEIVE_DATA: begin
                 if (~rx_rdy_n) begin // RX data available
                     raddr <= 3'd0; // Read from RHR
-                    last_rx_byte <= rdata;
                     
                     // Check for END_IMAGE
                     if (rdata == END_IMAGE) begin
                         state <= SEND_COMPLETE;
-                        image_end <= 1'b1; // Signal end of image
+                        image_end <= 1'b1; 
                     end else begin
-                        // Process regular data byte
                         byte_counter <= byte_counter + 1'b1;
-                        
-                        // Output data to storing module
                         data_out <= rdata;
                         data_valid <= 1'b1;
-
-                        // Check if chunk is complete (256 bytes)
-                        if (byte_counter >= (CHUNK_SIZE - 1)) begin
-                            state <= SEND_ACK;
-                            chunk_complete <= 1'b1; // Signal chunk complete
-                        end
                     end
-                end
-            end
-            
-            SEND_ACK: begin
-                if (~tx_rdy_n) begin // TX ready
-                    tx_en <= 1'b1;
-                    waddr <= 3'd0; // Write to THR
-                    wdata <= ACK;
-                    state <= WAIT_TX_READY;
-                    next_state <= RECEIVE_CHUNK;
-                    byte_counter <= 16'd0; // Reset byte counter for next chunk
                 end
             end
             
             SEND_COMPLETE: begin
                 if (~tx_rdy_n) begin // TX ready
                     tx_en <= 1'b1;
-                    waddr <= 3'd0; // Write to THR
+                    waddr <= 3'd0; 
                     wdata <= IMAGE_RECEIVED;
                     state <= WAIT_TX_READY;
                     next_state <= IMAGE_DONE;
                     blink_counter <= 8'd0;
                     blink_timer <= 27'd0;
-                    led_state <= 1'b1; // Start with LEDs ON
+                    led_state <= 1'b1; 
                 end
             end
             
